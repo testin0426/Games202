@@ -1,0 +1,61 @@
+# ===== OS / editor junk =====
+.DS_Store
+Thumbs.db
+__MACOSX/
+*.swp
+*.swo
+.vscode/
+.idea/
+*.code-workspace
+
+# ===== Assignment PDFs =====
+*.pdf
+
+# ===== Build artifacts =====
+build/
+build-*/
+out/
+bin/
+obj/
+dist/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
+*.lib
+*.out
+*.log
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# ===== Third-party libraries =====
+lib/
+ext/
+**/lib/
+**/ext/
+
+# ===== Binary assets =====
+assets/
+*.hdr
+*.exr
+*.png
+*.jpg
+*.jpeg
+*.tga
+*.bmp
+*.dds
+*.ktx
+*.obj
+*.mtl
+*.fbx
+*.gltf
+*.glb
+*.bin
+*.stl
+*.ply
