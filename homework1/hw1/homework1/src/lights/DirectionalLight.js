@@ -1,5 +1,3 @@
-const { Vector3 } = require("three");
-
 class DirectionalLight {
 
     constructor(lightIntensity, lightColor, lightPos, focalPoint, lightUp, hasShadowMap, gl) {
@@ -25,28 +23,14 @@ class DirectionalLight {
 
         //Model transform
         mat4.identity(modelMatrix);
-		mat4.translate(modelMatrix, modelMatrix, this.mesh.transform.translate);
-		mat4.scale(modelMatrix, modelMatrix, this.mesh.transform.scale);
+		mat4.translate(modelMatrix, modelMatrix, translate);
+		mat4.scale(modelMatrix, modelMatrix, scale);
         
-        // View transform
-        /*const a = new vec3();
-        const b = this.focalPoint - this.lightPos;
-        a.crossVectors(b, this.lightUp);
-        const c = new vec3();
-        c.crossVectors(a, this.lightUp);
-        const lookat = new THREE.Matrix4().set(
-            a.x, c.x, this.lightUp.x, 1,
-            a.y, c.y, this.lightUp.y, 1,
-            a.z, c.z, this.lightUp.z, 1,
-            1,   1,   1,          1
-            );
-            mat4.invert(viewMatrix,lookat);*/
+        //View transform
+        mat4.lookAt(viewMatrix, this.lightPos, this.focalPoint, this.lightUp);//
+
+        mat4.ortho(projectionMatrix, -111.70, 111.70, -78.98, 78.98, 0.1, 2000);
         
-        mat4.lookAt(viewMatrix, lightPos, focalPoint, lightUP);
-
-        // Projection transform
-       
-
         mat4.multiply(lightMVP, projectionMatrix, viewMatrix);
         mat4.multiply(lightMVP, lightMVP, modelMatrix);
         return lightMVP;

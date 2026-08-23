@@ -4,6 +4,12 @@ var cameraPosition = [30, 30, 30]
 var resolution = 2048;
 var fbo;
 
+// 调试参数：bias 与调试视图，GUI 实时修改
+var GUIParams = {
+	bias: 0.02,
+	debugMode: 0, // 0=正常 1=阴影mask 2=shadowmap深度 3=片元深度 4=UV
+};
+
 GAMES202Main();
 
 function GAMES202Main() {
@@ -56,8 +62,8 @@ function GAMES202Main() {
 	let obj1Transform = setTransform(0, 0, 0, 20, 20, 20);
 	let obj2Transform = setTransform(40, 0, -40, 10, 10, 10);
 
-	loadOBJ(renderer, 'assets/mary/', 'Marry', 'PhongMaterial', obj1Transform);
-	loadOBJ(renderer, 'assets/mary/', 'Marry', 'PhongMaterial', obj2Transform);
+	loadOBJ(renderer, 'assets/', 'Cyan', 'PhongMaterial', obj1Transform);
+	loadOBJ(renderer, 'assets/', 'Cyan', 'PhongMaterial', obj2Transform);
 	loadOBJ(renderer, 'assets/floor/', 'floor', 'PhongMaterial', floorTransform);
 	
 
@@ -72,9 +78,16 @@ function GAMES202Main() {
 
 	function createGUI() {
 		const gui = new dat.gui.GUI();
-		// const panelModel = gui.addFolder('Model properties');
-		// panelModelTrans.add(GUIParams, 'x').name('X');
-		// panelModel.open();
+		const panel = gui.addFolder('Shadow Debug');
+		panel.add(GUIParams, 'bias', 0.0, 0.05, 0.0005).name('Bias').listen();
+		panel.add(GUIParams, 'debugMode', {
+			'Normal': 0,
+			'ShadowMask': 1,
+			'ShadowMapDepth': 2,
+			'FragDepth': 3,
+			'UV': 4,
+		}).name('Debug View').listen();
+		panel.open();
 	}
 	createGUI();
 

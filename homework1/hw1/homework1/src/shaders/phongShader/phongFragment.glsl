@@ -25,6 +25,8 @@ varying highp vec3 vNormal;
 #define PI2 6.283185307179586
 
 uniform sampler2D uShadowMap;
+uniform float uBias;
+uniform int uDebugMode;
 
 varying vec4 vPositionFromLight;
 
@@ -88,6 +90,9 @@ float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
 }
 
 float PCF(sampler2D shadowMap, vec4 coords) {
+  uniformDiskSamples(coords.xy);  
+  unpack(texture2D(shadowMap, ));
+  
   return 1.0;
 }
 
@@ -106,9 +111,10 @@ float PCSS(sampler2D shadowMap, vec4 coords){
 
 float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
   
-  float z = unpack(texture2D(shadowMap, vTextureCoord));
+  float z = unpack(texture2D(shadowMap, shadowCoord.xy));
 
-  return step(z, shadowCoord.z);
+  return step(shadowCoord.z - EPS, z);
+  //return smoothstep(shadowCoord.z - 0.008, shadowCoord.z - 0.01, z);
 }
 
 vec3 blinnPhong() {
@@ -137,12 +143,30 @@ vec3 blinnPhong() {
 void main(void) {
 
   float visibility;
+
+  vec3 shadowCoord = vPositionFromLight.xyz / vPositionFromLight.w * 0.5 + 0.5;
+  
   visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
   //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
   //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
 
   vec3 phongColor = blinnPhong();
 
-  //gl_FragColor = vec4(phongColor * visibility, 1.0);
-  gl_FragColor = vec4(phongColor, 1.0);
+  if (uDebugMode == 1) {
+    // 阴影 mask：黑白
+    gl_FragColor = vec4(vec3(visibility), 1.0);
+  } else if (uDebugMode == 2) {
+    // shadow map 存储的深度
+    float z = unpack(texture2D(uShadowMap, shadowCoord.xy));
+    gl_FragColor = vec4(vec3(z), 1.0);
+  } else if (uDebugMode == 3) {
+    // 当前片元光空间深度 shadowCoord.z
+    gl_FragColor = vec4(vec3(shadowCoord.z), 1.0);
+  } else if (uDebugMode == 4) {
+    // shadowCoord.xy（UV 分布）
+    gl_FragColor = vec4(shadowCoord.xy, 0.0, 1.0);
+  } else {
+    // 正常渲染
+    gl_FragColor = vec4(phongColor * visibility, 1.0);
+  }
 }

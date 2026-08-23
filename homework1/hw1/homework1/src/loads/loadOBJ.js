@@ -47,6 +47,7 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 							let Scale = [transform.modelScaleX, transform.modelScaleY, transform.modelScaleZ];
 
 							let light = renderer.lights[0].entity;
+
 							switch (objMaterial) {
 								case 'PhongMaterial':
 									material = buildPhongMaterial(colorMap, mat.specular.toArray(), light, Translation, Scale, "./src/shaders/phongShader/phongVertex.glsl", "./src/shaders/phongShader/phongFragment.glsl");
