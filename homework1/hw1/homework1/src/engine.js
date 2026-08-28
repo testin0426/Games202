@@ -6,7 +6,8 @@ var fbo;
 
 // 调试参数：bias 与调试视图，GUI 实时修改
 var GUIParams = {
-	bias: 0.02,
+	bias: 0.001,
+	filterScale: 0.003,
 	debugMode: 0, // 0=正常 1=阴影mask 2=shadowmap深度 3=片元深度 4=UV
 };
 
@@ -27,10 +28,27 @@ function GAMES202Main() {
 	const camera = new THREE.PerspectiveCamera(75, gl.canvas.clientWidth / gl.canvas.clientHeight, 1e-2, 1000);
 	camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
 
+	// 正交相机：光源视角用，尺寸与光源 ortho 盒子大致匹配
+	let orthoCamera = null;
+	function createOrthoCamera() {
+		const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+		const halfH = 80; // 光源 ortho 的 y 半范围
+		orthoCamera = new THREE.OrthographicCamera(-halfH * aspect, halfH * aspect, halfH, -halfH, 0.1, 2000);
+	}
+
 	// Add resize listener
 	function setSize(width, height) {
 		camera.aspect = width / height;
 		camera.updateProjectionMatrix();
+		if (orthoCamera) {
+			const aspect = width / height;
+			const halfH = 80;
+			orthoCamera.left = -halfH * aspect;
+			orthoCamera.right = halfH * aspect;
+			orthoCamera.top = halfH;
+			orthoCamera.bottom = -halfH;
+			orthoCamera.updateProjectionMatrix();
+		}
 	}
 	setSize(canvas.clientWidth, canvas.clientHeight);
 	window.addEventListener('resize', () => setSize(canvas.clientWidth, canvas.clientHeight));
@@ -56,6 +74,9 @@ function GAMES202Main() {
 	const directionLight = new DirectionalLight(5000, [1, 1, 1], lightPos, focalPoint, lightUp, true, renderer.gl);
 	renderer.addLight(directionLight);
 
+	//const pointLight = new PointLight(5000, [1,1,1], true, renderer.gl);
+	//renderer.addLight(pointLight);
+
 	// Add shapes
 	
 	let floorTransform = setTransform(0, 0, -30, 4, 4, 4);
@@ -79,7 +100,8 @@ function GAMES202Main() {
 	function createGUI() {
 		const gui = new dat.gui.GUI();
 		const panel = gui.addFolder('Shadow Debug');
-		panel.add(GUIParams, 'bias', 0.0, 0.05, 0.0005).name('Bias').listen();
+		panel.add(GUIParams, 'bias', -0.001, 0.005, 0.0005).name('Bias').listen();
+		panel.add(GUIParams, 'filterScale', 0.0, 0.02, 0.0005).name('Filter Scale').listen();
 		panel.add(GUIParams, 'debugMode', {
 			'Normal': 0,
 			'ShadowMask': 1,
@@ -87,6 +109,28 @@ function GAMES202Main() {
 			'FragDepth': 3,
 			'UV': 4,
 		}).name('Debug View').listen();
+
+		// 视角切换按钮
+		const views = {
+			'Light View (Ortho)': function () {
+				if (!orthoCamera) createOrthoCamera();
+				cameraControls.object = orthoCamera;
+				renderer.camera = orthoCamera;
+				orthoCamera.position.set(lightPos[0], lightPos[1], lightPos[2]);
+				orthoCamera.updateProjectionMatrix();
+				cameraControls.target.set(focalPoint[0], focalPoint[1], focalPoint[2]);
+				cameraControls.update();
+			},
+			'Default View (Persp)': function () {
+				cameraControls.object = camera;
+				renderer.camera = camera;
+				camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
+				cameraControls.target.set(0, 0, 0);
+				cameraControls.update();
+			}
+		};
+		panel.add(views, 'Light View (Ortho)').name('Light View (Ortho)');
+		panel.add(views, 'Default View (Persp)').name('Default View (Persp)');
 		panel.open();
 	}
 	createGUI();

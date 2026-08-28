@@ -1,5 +1,12 @@
-cmake_minimum_required (VERSION 3.2)
+cmake_minimum_required (VERSION 3.10)
 project(nori)
+
+if (MSVC)
+  # The source files contain UTF-8 comments; without this flag MSVC
+  # assumes the system ANSI code page and may swallow newlines that
+  # follow multibyte characters in comments.
+  add_compile_options(/utf-8)
+endif()
 
 add_subdirectory(ext ext_build)
 

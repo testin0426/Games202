@@ -15,6 +15,7 @@ class PhongMaterial extends Material {
             'uLightMVP': { type: 'matrix4fv', value: lightMVP },
             // 调试参数：通过 getter 实时读取全局 GUIParams，GUI 拖动即可联动
             'uBias': { type: '1f', get value() { return GUIParams.bias; } },
+            'uFilterScale': { type: '1f', get value() { return GUIParams.filterScale; } },
             'uDebugMode': { type: '1i', get value() { return GUIParams.debugMode; } },
             //'uLightOrtho'
 
