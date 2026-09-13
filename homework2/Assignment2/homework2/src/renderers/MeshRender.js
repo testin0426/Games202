@@ -5,6 +5,7 @@ class MeshRender {
 	#normalBuffer;
 	#texcoordBuffer;
 	#indicesBuffer;
+	#extraBuffers;
 
 	constructor(gl, mesh, material) {
 
@@ -37,6 +38,20 @@ class MeshRender {
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.#texcoordBuffer);
 			gl.bufferData(gl.ARRAY_BUFFER, mesh.texcoords, gl.STATIC_DRAW);
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);
+		}
+
+		// 额外 attribute（如 PRT 的 aPrecomputeLT）
+		this.#extraBuffers = [];
+		if (mesh.extraAttribs && mesh.extraAttribs.length > 0) {
+			for (let i = 0; i < mesh.extraAttribs.length; i++) {
+				const attr = mesh.extraAttribs[i];
+				const buf = gl.createBuffer();
+				gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+				gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(attr.array), gl.STATIC_DRAW);
+				gl.bindBuffer(gl.ARRAY_BUFFER, null);
+				this.#extraBuffers.push({ name: attr.name, buffer: buf, components: attr.components });
+				extraAttribs.push(attr.name);
+			}
 		}
 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.#indicesBuffer);
@@ -103,6 +118,24 @@ class MeshRender {
 				offset);
 			gl.enableVertexAttribArray(
 				this.shader.program.attribs[this.mesh.texcoordsName]);
+		}
+
+		// 绑定额外 attribute（mat3 占 3 个连续 location，stride=36）
+		for (let i = 0; i < this.#extraBuffers.length; i++) {
+			const extra = this.#extraBuffers[i];
+			const loc = this.shader.program.attribs[extra.name];
+			if (loc < 0) continue;
+			gl.bindBuffer(gl.ARRAY_BUFFER, extra.buffer);
+			if (extra.components == 9) {
+				// mat3：三列各占一个 location
+				for (let c = 0; c < 3; c++) {
+					gl.vertexAttribPointer(loc + c, 3, gl.FLOAT, false, 36, c * 12);
+					gl.enableVertexAttribArray(loc + c);
+				}
+			} else {
+				gl.vertexAttribPointer(loc, extra.components, gl.FLOAT, false, 0, 0);
+				gl.enableVertexAttribArray(loc);
+			}
 		}
 
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.#indicesBuffer);
@@ -199,16 +232,6 @@ class MeshRender {
 		}
 
 		gl.useProgram(this.shader.program.glShaderProgram);
-		
-		// Bind attribute mat3 - LT
-		const buf = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(precomputeLT[guiParams.envmapId]), gl.STATIC_DRAW);
-	
-		for (var ii = 0; ii < 3; ++ii) {
-			gl.enableVertexAttribArray(this.shader.program.attribs['aPrecomputeLT'] + ii);
-			gl.vertexAttribPointer(this.shader.program.attribs['aPrecomputeLT'] + ii, 3, gl.FLOAT, false, 36, ii * 12);
-		}
 
 		// Bind geometry information
 		this.bindGeometryInfo();
@@ -222,9 +245,9 @@ class MeshRender {
 		// Draw
 		{
 			const vertexCount = this.mesh.count;
-			const type = gl.UNSIGNED_SHORT;
-			const offset = 0;
-			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
+			// 索引就是 0..N-1 顺序，直接 drawArrays 即可；
+			// 避免 drawElements + Uint16 索引在顶点数 > 65535 时回绕（Cyan 有 13w 顶点）
+			gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
 		}
 	}
 }

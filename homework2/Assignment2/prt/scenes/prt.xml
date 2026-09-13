@@ -9,12 +9,15 @@
 		<string name="type" value="shadowed" />
 		<integer name="bounce" value="1" />
 		<integer name="PRTSampleCount" value="100" />
-		<string name="cubemap" value="cubemap/Indoor" />
+		<string name="cubemap" value="cubemap/GraceCathedral" />
 	</integrator>
 
     <!-- Load the Stanford bunny (https://graphics.stanford.edu/data/3Dscanrep/) -->
 	<mesh type="obj">
 		<string name="filename" value="Cyan.obj"/>
+		<transform name="toWorld">
+			<scale value="2.5, 2.5, 2.5"/>
+		</transform>
 		<bsdf type="diffuse"/>
 	</mesh>
 

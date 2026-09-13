@@ -5,7 +5,7 @@ class TRSTransform {
     }
 }
 class Mesh {
-	constructor(verticesAttrib, normalsAttrib, texcoordsAttrib, indices, transform) {
+	constructor(verticesAttrib, normalsAttrib, texcoordsAttrib, indices, transform, extraAttribs) {
 		this.indices = indices;
 		this.count = indices.length;
 		this.hasVertices = false;
@@ -16,8 +16,6 @@ class Mesh {
 		const modelScale = [transform.modelScaleX, transform.modelScaleY, transform.modelScaleZ];
 		let meshTrans = new TRSTransform(modelTranslation, modelScale);
 		this.transform = meshTrans;
-
-		let extraAttribs = [];
 
 		if (verticesAttrib != null) {
 			this.hasVertices = true;
@@ -34,6 +32,9 @@ class Mesh {
 			this.texcoords = texcoordsAttrib.array;
 			this.texcoordsName = texcoordsAttrib.name;
 		}
+
+		// 额外 attribute（如 PRT 的 aPrecomputeLT，mat3 = 9 floats/顶点）
+		this.extraAttribs = extraAttribs || [];
 	}
 
 	static cube(transform) {

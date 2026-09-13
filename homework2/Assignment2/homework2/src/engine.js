@@ -85,37 +85,38 @@ async function GAMES202Main() {
 	loadOBJ(renderer, 'assets/testObj/', 'testObj', 'SkyBoxMaterial', skyBoxTransform);
 
 	// file parsing
-	// for (let i = 0; i < envmap.length; i++) {
+	for (let i = 0; i < envmap.length; i++) {
 
-	// 	let val = '';
-	// 	await this.loadShaderFile(envmap[i] + "/transport.txt").then(result => {
-	// 		val = result;
-	// 	});
+	let val = '';
+	await this.loadShaderFile(envmap[i] + "/transport.txt").then(result => {
+			val = result;
+	});
 
-	// 	let preArray = val.split(/[(\r\n)\r\n' ']+/);
-	// 	let lineArray = [];
-	// 	precomputeLT[i] = []
-	// 	for (let j = 1; j <= Number(preArray.length) - 2; j++) {
-	// 		precomputeLT[i][j - 1] = Number(preArray[j])
-	// 	}
-	// 	await this.loadShaderFile(envmap[i] + "/light.txt").then(result => {
-	// 		val = result;
-	// 	});
+	let preArray = val.split(/[(\r\n)\r\n' ']+/);
+	let lineArray = [];
+	precomputeLT[i] = []
+	// 跳过第一个数（顶点数），取完所有系数（修正 off-by-one，不再丢最后一个）
+	for (let j = 1; j < preArray.length; j++) {
+		precomputeLT[i][j - 1] = Number(preArray[j])
+	}
+	await this.loadShaderFile(envmap[i] + "/light.txt").then(result => {
+		val = result;
+	});
 
-	// 	precomputeL[i] = val.split(/[(\r\n)\r\n]+/);
-	// 	precomputeL[i].pop();
-	// 	for (let j = 0; j < 9; j++) {
-	// 		lineArray = precomputeL[i][j].split(' ');
-	// 		for (let k = 0; k < 3; k++) {
-	// 			lineArray[k] = Number(lineArray[k]);
-	// 		}
-	// 		precomputeL[i][j] = lineArray;
-	// 	}
-	// }
+	precomputeL[i] = val.split(/[(\r\n)\r\n]+/);
+	precomputeL[i].pop();
+	for (let j = 0; j < 9; j++) {
+		lineArray = precomputeL[i][j].split(' ');
+		for (let k = 0; k < 3; k++) {
+			lineArray[k] = Number(lineArray[k]);
+		}
+		precomputeL[i][j] = lineArray;
+	}
+	}
 
 	// TODO: load model - Add your Material here
-	// loadOBJ(renderer, 'assets/bunny/', 'bunny', 'addYourPRTMaterial', boxTransform);
-	// loadOBJ(renderer, 'assets/bunny/', 'bunny', 'addYourPRTMaterial', box2Transform);
+	 loadOBJ(renderer, 'assets/cyan/', 'Cyan', 'ShMaterial', boxTransform);
+	 loadOBJ(renderer, 'assets/cyan/', 'Cyan', 'ShMaterial', box2Transform);
 
 	function createGUI() {
 		const gui = new dat.gui.GUI();

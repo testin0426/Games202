@@ -18,12 +18,12 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 
 	new THREE.MTLLoader(manager)
 		.setPath(path)
-		.load(name + '.mtl', function (materials) {
+		.load(name + '.mtl' + '?t=' + Date.now(), function (materials) {
 			materials.preload();
 			new THREE.OBJLoader(manager)
 				.setMaterials(materials)
 				.setPath(path)
-				.load(name + '.obj', function (object) {
+				.load(name + '.obj' + '?t=' + Date.now(), function (object) {
 					object.traverse(function (child) {
 						if (child.isMesh) {
 							let geo = child.geometry;
@@ -33,11 +33,17 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 
 							var indices = Array.from({ length: geo.attributes.position.count }, (v, k) => k);
 
+							// PRT 材质需要把传输系数作为顶点 attribute 传进去
+							let extraAttribs = null;
+							if (objMaterial == 'ShMaterial') {
+								extraAttribs = [{ name: 'aPrecomputeLT', array: precomputeLT[guiParams.envmapId], components: 9 }];
+							}
+
 							let mesh = new Mesh({ name: 'aVertexPosition', array: geo.attributes.position.array },
 								{ name: 'aNormalPosition', array: geo.attributes.normal.array },
 								//{ name: 'aTextureCoord', array: geo.attributes.uv.array },
 								null,
-								indices, transform);
+								indices, transform, extraAttribs);
 							let colorMap = new Texture();
 							if (mat.map != null) {
 								colorMap.CreateImageTexture(renderer.gl, mat.map.image);
@@ -58,6 +64,9 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 									shadowMaterial = buildShadowMaterial(light, Translation, Scale, "./src/shaders/shadowShader/shadowVertex.glsl", "./src/shaders/shadowShader/shadowFragment.glsl");
 									break;
 								// TODO: Add your PRTmaterial here
+								case 'ShMaterial':
+									material = buildShMaterial("./src/shaders/shshader/shVertex.glsl", "./src/shaders/shshader/shFragment.glsl");
+									break;
 
 								case 'SkyBoxMaterial':
 									material = buildSkyBoxMaterial("./src/shaders/skyBoxShader/SkyBoxVertex.glsl", "./src/shaders/skyBoxShader/SkyBoxFragment.glsl");
