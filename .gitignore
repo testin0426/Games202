@@ -11,6 +11,9 @@ __MACOSX/
 # ===== Assignment PDFs =====
 *.pdf
 
+# ===== Markdown notes =====
+*.md
+
 # ===== Build artifacts =====
 build/
 build-*/
