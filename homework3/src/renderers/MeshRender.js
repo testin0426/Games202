@@ -5,6 +5,7 @@ class MeshRender {
 	#normalBuffer;
 	#texcoordBuffer;
 	#indicesBuffer;
+	#indexType;
 
 	constructor(gl, mesh, material) {
 
@@ -39,8 +40,19 @@ class MeshRender {
 			gl.bindBuffer(gl.ARRAY_BUFFER, null);
 		}
 
+		// Large meshes (e.g. OBJ models with >65535 vertices) require 32-bit indices.
+		// A Uint16Array would silently wrap around and corrupt the geometry.
+		let maxIndex = 0;
+		for (let i = 0; i < mesh.indices.length; i++) {
+			if (mesh.indices[i] > maxIndex) {
+				maxIndex = mesh.indices[i];
+			}
+		}
+		this.#indexType = (maxIndex > 65535) ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
+		const IndexArray = (this.#indexType === gl.UNSIGNED_INT) ? Uint32Array : Uint16Array;
+
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.#indicesBuffer);
-		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(mesh.indices), gl.STATIC_DRAW);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new IndexArray(mesh.indices), gl.STATIC_DRAW);
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
 		this.material.setMeshAttribs(extraAttribs);
@@ -210,7 +222,7 @@ class MeshRender {
 		// Draw
 		{
 			const vertexCount = this.mesh.count;
-			const type = gl.UNSIGNED_SHORT;
+			const type = this.#indexType;
 			const offset = 0;
 			gl.drawElements(gl.TRIANGLES, vertexCount, type, offset);
 		}

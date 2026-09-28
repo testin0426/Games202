@@ -17,6 +17,7 @@ function GAMES202Main() {
 		return;
 	}
 	gl.getExtension('OES_texture_float');
+	gl.getExtension('OES_element_index_uint');
 	gl_draw_buffers = gl.getExtension('WEBGL_draw_buffers');
 	var maxdb = gl.getParameter(gl_draw_buffers.MAX_DRAW_BUFFERS_WEBGL);
     console.log('MAX_DRAW_BUFFERS_WEBGL: ' + maxdb);
@@ -24,16 +25,21 @@ function GAMES202Main() {
 	// Add camera
 	const camera = new THREE.PerspectiveCamera(75, gl.canvas.clientWidth / gl.canvas.clientHeight, 1e-3, 1000);
 	let cameraPosition, cameraTarget;
-	// /*
+	/*
 	// Cube
 	cameraPosition = [6, 1, 0]
 	cameraTarget = [0, 0, 0]
-	// */
+	*/
 	/*
 	// Cave
 	cameraPosition = [4.18927, 1.0313, 2.07331]
 	cameraTarget = [2.92191, 0.98, 1.55037]
 	*/
+	// /*
+	// Cyan character
+	cameraPosition = [1.4, 1.15, 1.7]
+	cameraTarget = [0, 0.85, 0]
+	// */
 	camera.position.set(cameraPosition[0], cameraPosition[1], cameraPosition[2]);
 	camera.fbo = new FBO(gl);
 
@@ -70,10 +76,20 @@ function GAMES202Main() {
 		'z': 0.19843153,
 	};
 	*/
-	// /*
+	/*
 	// Cube
 	lightRadiance = [1, 1, 1];
 	lightPos = [-2, 4, 1];
+	lightDir = {
+		'x': 0.4,
+		'y': -0.9,
+		'z': -0.2,
+	};
+	*/
+	// /*
+	// Cyan character
+	lightRadiance = [1, 1, 1];
+	lightPos = [-2, 3, 2];
 	lightDir = {
 		'x': 0.4,
 		'y': -0.9,
@@ -85,9 +101,13 @@ function GAMES202Main() {
 	renderer.addLight(directionLight);
 
 	// Add shapes
-	loadGLTF(renderer, 'assets/cube/', 'cube1', 'SSRMaterial');
-	// loadGLTF(renderer, 'assets/cube/', 'cube2', 'SSRMaterial');
-	// loadGLTF(renderer, 'assets/cave/', 'cave', 'SSRMaterial');
+	//loadGLTF(renderer, 'assets/cube/', 'cube1', 'SSRMaterial');
+	//loadGLTF(renderer, 'assets/cube/', 'cube2', 'SSRMaterial');
+	//loadGLTF(renderer, 'assets/cave/', 'cave', 'SSRMaterial');
+
+	// Cyan character rendered with the SSR material
+	let cyanTransform = setTransform(0, 0, 0, 1, 1, 1);
+	loadOBJ(renderer, 'assets/Cyan/', 'Cyan', 'SSRMaterial', cyanTransform);
 
 	function createGUI() {
 		const gui = new dat.gui.GUI();

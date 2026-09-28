@@ -29,31 +29,52 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 							else mat = child.material;
 
 							var indices = Array.from({ length: geo.attributes.position.count }, (v, k) => k);
-							let mesh = new Mesh({ name: 'aVertexPosition', array: geo.attributes.position.array },
-								{ name: 'aNormalPosition', array: geo.attributes.normal.array },
-								{ name: 'aTextureCoord', array: geo.attributes.uv.array },
-								indices, transform);
+							let positions = { name: 'aVertexPosition', array: geo.attributes.position.array };
+							let normals = geo.attributes.normal ? { name: 'aNormalPosition', array: geo.attributes.normal.array } : null;
+							let texcoords = geo.attributes.uv ? { name: 'aTextureCoord', array: geo.attributes.uv.array } : null;
+							let mesh = new Mesh(positions, normals, texcoords, indices, transform);
 
 							let colorMap = new Texture();
 							if (mat.map != null) {
 								colorMap.CreateImageTexture(renderer.gl, mat.map.image);
 							}
 							else {
-								colorMap.CreateConstantTexture(renderer.gl, mat.color.toArray());
+								colorMap.CreateConstantTexture(renderer.gl, mat.color.toArray(), true);
 							}
 
-							let material;
+							let specularMap = new Texture();
+							specularMap.CreateConstantTexture(renderer.gl, [0, 0, 0]);
+
+							let normalMap = new Texture();
+							if (mat.normalMap != null) {
+								normalMap.CreateImageTexture(renderer.gl, mat.normalMap.image);
+							}
+							else {
+								normalMap.CreateConstantTexture(renderer.gl, [0.5, 0.5, 1], false);
+							}
+
+							let material, shadowMaterial, bufferMaterial;
 
 							let light = renderer.lights[0].entity;
 							switch (objMaterial) {
 								case 'SSRMaterial':
-									material = buildSSRMaterial(colorMap, mat.specular.toArray(), light, "./src/shaders/ssrShader/ssrVertex.glsl", "./src/shaders/ssrShader/ssrFragment.glsl");
+									material = buildSSRMaterial(colorMap, specularMap, light, renderer.camera, "./src/shaders/ssrShader/ssrVertex.glsl", "./src/shaders/ssrShader/ssrFragment.glsl");
+									shadowMaterial = buildShadowMaterial(light, "./src/shaders/shadowShader/shadowVertex.glsl", "./src/shaders/shadowShader/shadowFragment.glsl");
+									bufferMaterial = buildGbufferMaterial(colorMap, normalMap, light, renderer.camera, "./src/shaders/gbufferShader/gbufferVertex.glsl", "./src/shaders/gbufferShader/gbufferFragment.glsl");
 									break;
 							}
 
 							material.then((data) => {
 								let meshRender = new MeshRender(renderer.gl, mesh, data);
 								renderer.addMeshRender(meshRender);
+							});
+							shadowMaterial.then((data) => {
+								let shadowMeshRender = new MeshRender(renderer.gl, mesh, data);
+								renderer.addShadowMeshRender(shadowMeshRender);
+							});
+							bufferMaterial.then((data) => {
+								let bufferMeshRender = new MeshRender(renderer.gl, mesh, data);
+								renderer.addBufferMeshRender(bufferMeshRender);
 							});
 
 						}

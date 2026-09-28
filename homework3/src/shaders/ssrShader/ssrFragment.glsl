@@ -140,29 +140,103 @@ vec3 EvalDirectionalLight(vec2 uv) {
 }
 
 bool RayMarch(vec3 ori, vec3 dir, out vec3 hitPos) {
+  const float step = 0.05;
+  float t = 0.01;                      
+  for (int i = 0; i < 200; ++i) {
+    vec3 p = ori + dir * t;
+    vec2 uv = GetScreenCoordinate(p);
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+      return false;
+    }
+    float sceneDepth = GetGBufferDepth(uv);
+    float rayDepth = GetDepth(p);
+    float diff = rayDepth - sceneDepth;
+    if (diff > 0.0 && diff < 0.5) {
+      hitPos = p;
+      return true;
+    }
+    t += step;
+  }
   return false;
 }
 
-#define SAMPLE_NUM 1
+#define SAMPLE_NUM 10
+
+
+vec3 OneBounceIndirectLight(vec3 pos, vec3 normal, vec3 albedo, inout float s) {
+  vec3 b1, b2;
+  LocalBasis(normal, b1, b2);
+
+  vec3 result = vec3(0.0);
+
+  for (int i = 0; i < SAMPLE_NUM; ++i) {
+    float pdf;
+    vec3 dirLocal = SampleHemisphereCos(s, pdf);              
+    mat3 TBN = mat3(b1, b2, normal);
+    vec3 dir = TBN * dirLocal;                                 
+
+    vec3 hitPos;
+    if (RayMarch(pos, dir, hitPos)) {
+      vec2 hitUV = GetScreenCoordinate(hitPos);
+      vec3 hitNormal = normalize(GetGBufferNormalWorld(hitUV));
+
+      float NoL = max(dot(hitNormal, normalize(uLightDir)), 0.0);
+      vec3 Li = EvalDiffuse(dir, -dir, hitUV) * EvalDirectionalLight(hitUV) * NoL;
+
+      result += Li * (albedo / M_PI) * dirLocal.z / pdf;
+    }
+  }
+
+  return result / float(SAMPLE_NUM);
+}
+
+
+vec3 TwoBounceIndirectLight(vec3 pos, vec3 normal, vec3 albedo, inout float s) {
+  vec3 b1, b2;
+  LocalBasis(normal, b1, b2);
+
+  vec3 result = vec3(0.0);
+
+  for (int i = 0; i < SAMPLE_NUM; ++i) {
+    float pdf;
+    vec3 dirLocal = SampleHemisphereCos(s, pdf);
+    mat3 TBN = mat3(b1, b2, normal);
+    vec3 dir = TBN * dirLocal;  
+    vec3 hitPos;
+    if (RayMarch(pos, dir, hitPos)) {
+      vec2 hitUV = GetScreenCoordinate(hitPos);
+      vec3 hitNormal = normalize(GetGBufferNormalWorld(hitUV));
+      vec3 hitAlbedo = GetGBufferDiffuse(hitUV);
+
+      float NoL = max(dot(hitNormal, normalize(uLightDir)), 0.0);
+      vec3 Ld = EvalDiffuse(dir, -dir, hitUV) * EvalDirectionalLight(hitUV) * NoL;
+      
+      vec3 L_indirect = OneBounceIndirectLight(hitPos, hitNormal, hitAlbedo, s);
+
+      vec3 Li = Ld + L_indirect;
+      result += Li * (albedo / M_PI) * dirLocal.z / pdf;
+    }
+  }
+
+  return result / float(SAMPLE_NUM);
+}
 
 void main() {
   float s = InitRand(gl_FragCoord.xy);
+
+  vec3 pos = vPosWorld.xyz / vPosWorld.w; 
+  vec2 uv = GetScreenCoordinate(pos);
+  vec3 normal = normalize(GetGBufferNormalWorld(uv));
+  vec3 albedo = GetGBufferDiffuse(uv);
   
-  vec3 wi = vec3(vPosWorld.xyz / vPosWorld.w );
-  vec2 uv = GetScreenCoordinate(wi);
 
   vec3 LD = normalize(uLightDir);
-  vec3 N = normalize(GetGBufferNormalWorld(uv));
- 
+  float cosTerm = max(dot(normal, LD), 0.0);
+  vec3 direct = EvalDiffuse(LD, LD, uv) * EvalDirectionalLight(uv) * cosTerm;
 
-  vec3 L = EvalDiffuse(wi, wi, uv);
-  vec3 Le = EvalDirectionalLight(uv);
-  float NoL = dot(N, LD);
-  
-  vec3 color *= max(NoL, 0.0);
-  color *= Le;
-  
-  color = pow(clamp(L, vec3(0.0), vec3(1.0)), vec3(1.0 / 2.2));
-  
-  gl_FragColor = vec4(color, 1.0);
+
+  vec3 indirect = TwoBounceIndirectLight(pos, normal, albedo, s);
+
+  vec3 color = direct + indirect;
+  gl_FragColor = vec4(pow(color, vec3(1.0 / 2.2)), 1.0);
 }
