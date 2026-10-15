@@ -182,8 +182,8 @@ vec3 OneBounceIndirectLight(vec3 pos, vec3 normal, vec3 albedo, inout float s) {
 
       float NoL = max(dot(hitNormal, normalize(uLightDir)), 0.0);
       vec3 Li = EvalDiffuse(dir, -dir, hitUV) * EvalDirectionalLight(hitUV) * NoL;
-
-      result += Li * (albedo / M_PI) * dirLocal.z / pdf;
+      result += Li * albedo;
+      //result += Li * (albedo / M_PI) * dirLocal.z / pdf;
     }
   }
 
@@ -214,7 +214,8 @@ vec3 TwoBounceIndirectLight(vec3 pos, vec3 normal, vec3 albedo, inout float s) {
       vec3 L_indirect = OneBounceIndirectLight(hitPos, hitNormal, hitAlbedo, s);
 
       vec3 Li = Ld + L_indirect;
-      result += Li * (albedo / M_PI) * dirLocal.z / pdf;
+      result += Li * albedo; // also can be written like this.
+      //result += Li * (albedo / M_PI) * dirLocal.z / pdf;
     }
   }
 
